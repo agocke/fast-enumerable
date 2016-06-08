@@ -4,20 +4,26 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using FastList;
 
 namespace Name
 {
     public class Program
     {
         private readonly List<int> _list;
+        private readonly MyFastListEnumerable<int> _list2;
+        private readonly MyFastListEnumerator<int> _list3;
         
         public Program()
         {
-            var count = 200000;
+            const int count = 200000;
             _list = new List<int>(count);
+            _list2 = new MyFastListEnumerable<int>(count);
+            _list3 = new MyFastListEnumerator<int>(count);
             for (int i = 0; i < count; i++)
             {
                 _list.Add(i + 1);
+                _list2[i] = _list3[i] = i + 1;
             } 
         }
 
@@ -30,6 +36,8 @@ namespace Name
             Console.Out.WriteLine(test.IFastEnumerableGeneric());
             Console.Out.WriteLine(test.IFastEnumerator());
             Console.Out.WriteLine(test.IFastEnumeratorGeneric());
+            Console.Out.WriteLine(test.MyListFastEnumerable());
+            Console.Out.WriteLine(test.MyListFastEnumerator());
 
             var summary = BenchmarkRunner.Run<Program>();
         }
@@ -74,7 +82,23 @@ namespace Name
             }
             return total;
         }
-        
+
+        [Benchmark]
+        public long MyListFastEnumerable()
+        {
+            long total = 0;
+            var enumerator = _list2.Start;
+            bool remaining = true;
+            loop:
+            var i = _list2.TryGetNext(ref enumerator, out remaining);
+            if (remaining)
+            {
+                total += i;
+                goto loop;
+            }
+            return total;
+        }
+
         [Benchmark]
         public long IFastEnumerable()
         {
@@ -92,8 +116,8 @@ namespace Name
             return total;
         }
 
-        [Benchmark]
-        public long IFastEnumerableGeneric() => IfeHelper(_list.GetFastEnumerable());
+        [Benchmark] 
+        public long IFastEnumerableGeneric() => IfeHelper<ArrayFastEnumerable<int>, int>(_list.GetFastEnumerable());
 
         private long IfeHelper<IFE, TEnum>(IFE ife) where IFE : IFastEnumerable<int, TEnum>
         {
@@ -115,6 +139,22 @@ namespace Name
         {
             long total = 0;
             var enumerator = _list.GetFastEnumerator();
+            bool remaining = true;
+            loop:
+            var i = enumerator.TryGetNext(out remaining);
+            if (remaining)
+            {
+                total += i;
+                goto loop;
+            }
+            return total;
+        }
+
+        [Benchmark]
+        public long MyListFastEnumerator()
+        {
+            long total = 0;
+            var enumerator = _list3.Enumerator;
             bool remaining = true;
             loop:
             var i = enumerator.TryGetNext(out remaining);
