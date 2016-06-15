@@ -31,6 +31,7 @@ namespace Name
         {
             var test = new Program();
             Console.Out.WriteLine(test.ForLoop());
+            Console.Out.WriteLine(test.ForEachLoop());
             Console.Out.WriteLine(test.FastEnumerable());
             Console.Out.WriteLine(test.IFastEnumerable());
             Console.Out.WriteLine(test.IFastEnumerableGeneric());
@@ -49,6 +50,17 @@ namespace Name
             for (int i = 0; i < _list.Count; i++)
             {
                 total += _list[i];
+            }
+            return total;
+        }
+
+        [Benchmark]
+        public long ForEachLoop()
+        {
+            long total = 0;
+            foreach (var i in _list)
+            {
+                total += i;
             }
             return total;
         }
@@ -140,6 +152,7 @@ namespace Name
             long total = 0;
             var enumerator = _list.GetFastEnumerator();
             bool remaining = true;
+            enumerator.Reset();
             loop:
             var i = enumerator.TryGetNext(out remaining);
             if (remaining)
@@ -156,6 +169,7 @@ namespace Name
             long total = 0;
             var enumerator = _list3.Enumerator;
             bool remaining = true;
+            enumerator.Reset();
             loop:
             var i = enumerator.TryGetNext(out remaining);
             if (remaining)
@@ -172,6 +186,7 @@ namespace Name
             IFastEnumerator<int> ife = _list.GetFastEnumerator();
             long total = 0;
             bool remaining = true;
+            ife.Reset();
             loop:
             var i = ife.TryGetNext(out remaining);
             if (remaining)
@@ -193,6 +208,7 @@ namespace Name
         {
             long total = 0;
             bool remaining = true;
+            fastEnum.Reset();
             loop:
             var i = fastEnum.TryGetNext(out remaining);
             if (remaining)

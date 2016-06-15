@@ -34,6 +34,8 @@ namespace FastList
                 remaining = false;
                 return default(T);
             }
+
+            public void Reset() => _index = 0;
         }
 
         public FastListEnumerator Enumerator => new FastListEnumerator(_backing);

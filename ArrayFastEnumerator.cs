@@ -25,5 +25,7 @@ namespace System.Collections
             remaining = false;
             return default(T);
         }
+
+        public void Reset() => _index = 0;
     }
 }
