@@ -5,27 +5,27 @@ namespace System.Collections
 {
     public static class ArrayExtensions
     {
-        public static ArrayFastEnumerable<T> GetFastEnumerable<T>(this List<T> array)
+        public static ArrayFastEnumerable<T> GetFastEnumerable<T>(this T[] array)
         {
             return new ArrayFastEnumerable<T>(array);
         }
         
-        public static ArrayFastEnumerator<T> GetFastEnumerator<T>(this List<T> list) =>
+        public static ArrayFastEnumerator<T> GetFastEnumerator<T>(this T[] list) =>
             new ArrayFastEnumerator<T>(list);
     }
     
     public struct ArrayFastEnumerable<T> : IFastEnumerable<T, int>
     {
-        private readonly List<T> _backing;
+        private readonly T[] _backing;
         
-        public ArrayFastEnumerable(List<T> backing)
+        public ArrayFastEnumerable(T[] backing)
         {
             _backing = backing;
         }
         
         public T TryGetNext(ref int enumerator, out bool remaining) 
         {
-            if (enumerator < _backing.Count)
+            if (enumerator < _backing.Length)
             {
                 remaining = true;
                 return _backing[enumerator++];

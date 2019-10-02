@@ -1,35 +1,38 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using FastList;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Name
 {
     public class Program
     {
-        private readonly List<int> _list;
-        private readonly MyFastListEnumerable<int> _list2;
-        private readonly MyFastListEnumerator<int> _list3;
+        private readonly int[] _array;
+        private readonly MyFastListEnumerable<int> _array2;
+        private readonly MyFastListEnumerator<int> _array3;
         
         public Program()
         {
             const int count = 200000;
-            _list = new List<int>(count);
-            _list2 = new MyFastListEnumerable<int>(count);
-            _list3 = new MyFastListEnumerator<int>(count);
+            _array = new int[count];
+            _array2 = new MyFastListEnumerable<int>(count);
+            _array3 = new MyFastListEnumerator<int>(count);
             for (int i = 0; i < count; i++)
             {
-                _list.Add(i + 1);
-                _list2[i] = _list3[i] = i + 1;
+                var value = (i + 1) * ((i & 1) == 0 ? 1 : -1); // +1/-1 to avoid Sum overflow
+
+                _array[i] = value;
+                _array2[i] = _array3[i] = value;
             } 
         }
 
         public static void Main()
         {
             var test = new Program();
+            Console.Out.WriteLine(test.CisternLinq());
+            Console.Out.WriteLine(test.SystemLinq());
             Console.Out.WriteLine(test.ForLoop());
             Console.Out.WriteLine(test.ForEachLoop());
             Console.Out.WriteLine(test.FastEnumerable());
@@ -47,9 +50,9 @@ namespace Name
         public long ForLoop()
         {
             long total = 0;
-            for (int i = 0; i < _list.Count; i++)
+            for (int i = 0; i < _array.Length; i++)
             {
-                total += _list[i];
+                total += _array[i];
             }
             return total;
         }
@@ -58,7 +61,7 @@ namespace Name
         public long ForEachLoop()
         {
             long total = 0;
-            foreach (var i in _list)
+            foreach (var i in _array)
             {
                 total += i;
             }
@@ -66,9 +69,16 @@ namespace Name
         }
 
         [Benchmark]
+        public long CisternLinq() => Cistern.Linq.Enumerable.Sum(_array);
+
+
+        [Benchmark]
+        public long SystemLinq() => System.Linq.Enumerable.Sum(_array);
+
+        [Benchmark]
         public long ForeachIEnumerable()
         {
-            IEnumerable<int> ieList = _list;
+            IEnumerable<int> ieList = _array;
             long total = 0;
             var enumerator = ieList.GetEnumerator();
             while (enumerator.MoveNext())
@@ -81,7 +91,7 @@ namespace Name
         [Benchmark]
         public long FastEnumerable()
         {
-            var afeList = _list.GetFastEnumerable();
+            var afeList = _array.GetFastEnumerable();
             long total = 0;
             var enumerator = afeList.Start;
             bool remaining = true;
@@ -99,10 +109,10 @@ namespace Name
         public long MyListFastEnumerable()
         {
             long total = 0;
-            var enumerator = _list2.Start;
+            var enumerator = _array2.Start;
             bool remaining = true;
             loop:
-            var i = _list2.TryGetNext(ref enumerator, out remaining);
+            var i = _array2.TryGetNext(ref enumerator, out remaining);
             if (remaining)
             {
                 total += i;
@@ -114,7 +124,7 @@ namespace Name
         [Benchmark]
         public long IFastEnumerable()
         {
-            IFastEnumerable<int, int> ife = _list.GetFastEnumerable();
+            IFastEnumerable<int, int> ife = _array.GetFastEnumerable();
             long total = 0;
             var enumerator = ife.Start;
             bool remaining = true;
@@ -129,7 +139,7 @@ namespace Name
         }
 
         [Benchmark] 
-        public long IFastEnumerableGeneric() => IfeHelper<ArrayFastEnumerable<int>, int>(_list.GetFastEnumerable());
+        public long IFastEnumerableGeneric() => IfeHelper<ArrayFastEnumerable<int>, int>(_array.GetFastEnumerable());
 
         private long IfeHelper<IFE, TEnum>(IFE ife) where IFE : IFastEnumerable<int, TEnum>
         {
@@ -150,7 +160,7 @@ namespace Name
         public long FastEnumerator()
         {
             long total = 0;
-            var enumerator = _list.GetFastEnumerator();
+            var enumerator = _array.GetFastEnumerator();
             bool remaining = true;
             enumerator.Reset();
             loop:
@@ -167,7 +177,7 @@ namespace Name
         public long MyListFastEnumerator()
         {
             long total = 0;
-            var enumerator = _list3.Enumerator;
+            var enumerator = _array3.Enumerator;
             bool remaining = true;
             enumerator.Reset();
             loop:
@@ -183,7 +193,7 @@ namespace Name
         [Benchmark]
         public long IFastEnumerator()
         {
-            IFastEnumerator<int> ife = _list.GetFastEnumerator();
+            IFastEnumerator<int> ife = _array.GetFastEnumerator();
             long total = 0;
             bool remaining = true;
             ife.Reset();
@@ -200,7 +210,7 @@ namespace Name
         [Benchmark]
         public long IFastEnumeratorGeneric()
         {
-            var e = _list.GetFastEnumerator();
+            var e = _array.GetFastEnumerator();
             return IfeHelper2(ref e);
         }
         
